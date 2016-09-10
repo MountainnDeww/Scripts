@@ -1,0 +1,1 @@
+Write-Host; Write-Host "Build =" (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion").BuildLabEx
