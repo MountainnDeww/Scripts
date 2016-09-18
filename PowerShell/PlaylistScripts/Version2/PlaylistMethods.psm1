@@ -28,21 +28,32 @@ Function CopyPlaylistsToTemp()
 
 	If ($PrintStatus) { Write-Host; Write-Host "Copying Playlists to TempPlaylists." -ForegroundColor Green; Write-Host }
 
-	$WPLTempPlaylistPath = ($TempPlaylistPath + "\WPL")
-	If (!(Test-Path $WPLTempPlaylistPath)) { New-Item -ItemType Directory -Path $WPLTempPlaylistPath -Force; Write-Host }
-	RemoveFiles (Get-ChildItem(($WPLTempPlaylistPath + "\*.wpl")))
-
-	$ZPLTempPlaylistPath = ($TempPlaylistPath + "\ZPL")
-	If (!(Test-Path $ZPLTempPlaylistPath)) { New-Item -ItemType Directory -Path $ZPLTempPlaylistPath -Force; Write-Host }
-	RemoveFiles (Get-ChildItem(($ZPLTempPlaylistPath + "\*.zpl")))
-
-	$WPLFiles = Get-ChildItem(($PlayListPath + "\*.wpl"))
-	$ZPLFiles = Get-ChildItem(($PlayListPath + "\*.zpl"))
-
-	CopyFilesToDestination $WPLFiles $WPLTempPlaylistPath
-	CopyFilesToDestination $ZPLFiles $ZPLTempPlaylistPath
+	CopyPlaylistToTemp -PlaylistType "WPL" -TempPlaylistPath $TempPlaylistPath -PrintStatus
+	CopyPlaylistToTemp -PlaylistType "ZPL" -TempPlaylistPath $TempPlaylistPath -PrintStatus
+	CopyPlaylistToTemp -PlaylistType "PLS" -TempPlaylistPath $TempPlaylistPath -PrintStatus
 
 	If ($PrintStatus) { Write-Host; Write-Host ("CopyPlaylistsToTemp Complete!") -ForegroundColor Green; Write-Host }
+}
+
+Function CopyPlaylistToTemp()
+{
+	Param (
+		[String] $PlaylistType,
+		[String] $TempPlaylistPath,
+		[Switch] $PrintStatus
+	)
+
+	$TempPlaylistPath = ($TempPlaylistPath + "\" + $PlaylistType)
+	If (!(Test-Path $TempPlaylistPath)) { New-Item -ItemType Directory -Path $TempPlaylistPath -Force; Write-Host }
+	RemoveFiles (Get-ChildItem(($TempPlaylistPath + "\*." + $PlaylistType.ToLower())))
+
+	If ($PrintStatus) { Write-Host; Write-Host ("Copying", $PlaylistType, "Playlists to TempPlaylists.") -ForegroundColor Green; Write-Host }
+
+	$Files = Get-ChildItem(($PlayListPath + "\*." + $PlaylistType.ToLower()))
+
+	CopyFilesToDestination $Files $TempPlaylistPath
+
+	If ($PrintStatus) { Write-Host; Write-Host ("CopyPlaylistToTemp Complete!") -ForegroundColor Green; Write-Host }
 }
 
 Function CopyPlaylistsToMaster()
@@ -54,16 +65,30 @@ Function CopyPlaylistsToMaster()
 
 	If ($PrintStatus) { Write-Host; Write-Host "Copying Playlists to MasterPlaylists." -ForegroundColor Green; Write-Host }
 
-	$WPLMasterPlaylistPath = ($MasterPlayListPath + "\WPL")
-	$ZPLMasterPlaylistPath = ($MasterPlayListPath + "\ZPL")
-
-	$WPLFiles = Get-ChildItem(($PlayListPath + "\*.wpl"))
-	$ZPLFiles = Get-ChildItem(($PlayListPath + "\*.zpl"))
-
-	CopyFilesToDestination $WPLFiles $WPLMasterPlaylistPath
-	CopyFilesToDestination $ZPLFiles $ZPLMasterPlaylistPath
+	CopyPlaylistToMaster -PlaylistType "WPL" -MasterPlaylistPath $MasterPlaylistPath -PrintStatus
+	CopyPlaylistToMaster -PlaylistType "ZPL" -MasterPlaylistPath $MasterPlaylistPath -PrintStatus
+	CopyPlaylistToMaster -PlaylistType "PLS" -MasterPlaylistPath $MasterPlaylistPath -PrintStatus
 
 	If ($PrintStatus) { Write-Host; Write-Host ("CopyPlaylistsToMaster Complete!") -ForegroundColor Green; Write-Host }
+}
+
+Function CopyPlaylistToMaster()
+{
+	Param (
+		[String] $PlaylistType,
+		[String] $MasterPlaylistPath,
+		[Switch] $PrintStatus
+	)
+
+	If ($PrintStatus) { Write-Host; Write-Host ("Copying", $PlaylistType, "Playlists to MasterPlaylists.") -ForegroundColor Green; Write-Host }
+
+	$MasterPlaylistPath = ($MasterPlayListPath + "\" + $PlaylistType)
+
+	$Files = Get-ChildItem(($PlayListPath + "\*." + $PlaylistType.ToLower()))
+
+	CopyFilesToDestination $Files $MasterPlaylistPath
+
+	If ($PrintStatus) { Write-Host; Write-Host ("CopyPlaylistToMaster Complete!") -ForegroundColor Green; Write-Host }
 }
 
 Function CopyMastersToPlaylists()
@@ -75,15 +100,28 @@ Function CopyMastersToPlaylists()
 
 	If ($PrintStatus) { Write-Host; Write-Host "Copying MasterPlaylists to Playlists." -ForegroundColor Green; Write-Host }
 
-	$WPLMasterPlaylistFiles = Get-ChildItem($MasterPlayListPath + "\WPL\*.wpl")
-	$ZPLMasterPlaylistFiles = Get-ChildItem($MasterPlayListPath + "\ZPL\*.zpl")
-
-	If ($PrintStatus) { Write-Host; Write-Host "Copying MasterPlaylists to Playlists." -ForegroundColor Green; Write-Host }
-
-	CopyFilesToDestination $WPLMasterPlaylistFiles $PlayListPath
-	CopyFilesToDestination $ZPLMasterPlaylistFiles $PlayListPath
+	CopyMasterToPlaylists -PlaylistType "WPL" -MasterPlaylistPath $MasterPlaylistPath -PrintStatus
+	CopyMasterToPlaylists -PlaylistType "ZPL" -MasterPlaylistPath $MasterPlaylistPath -PrintStatus
+	CopyMasterToPlaylists -PlaylistType "PLS" -MasterPlaylistPath $MasterPlaylistPath -PrintStatus
 
 	If ($PrintStatus) { Write-Host; Write-Host ("CopyMastersToPlaylists Complete!") -ForegroundColor Green; Write-Host }
+}
+
+Function CopyMasterToPlaylists()
+{
+	Param (
+		[String] $PlaylistType,
+		[String] $MasterPlaylistPath,
+		[Switch] $PrintStatus
+	)
+
+	If ($PrintStatus) { Write-Host; Write-Host "Copying", $PlaylistType, "MasterPlaylists to Playlists." -ForegroundColor Green; Write-Host }
+
+	$MasterPlaylistFiles = Get-ChildItem($MasterPlayListPath + "\" + $PlaylistType + "\*." + $PlaylistType.ToLower())
+
+	CopyFilesToDestination $MasterPlaylistFiles $PlayListPath
+
+	If ($PrintStatus) { Write-Host; Write-Host ("CopyMasterToPlaylists Complete!") -ForegroundColor Green; Write-Host }
 }
 
 Function CreateCleanPlayListFiles()
@@ -95,23 +133,21 @@ Function CreateCleanPlayListFiles()
 
 	If ($PrintStatus) { Write-Host; Write-Host "Creating Clean Playlists." -ForegroundColor Green; Write-Host }
 
-	$startDir = $PWD
-	$workingDir = $ScriptPath.Path
-
-	CD $workingDir
-
-	$Files = Get-ChildItem(($PlayListPath + "\*.*pl"))
+	$Files = Get-ChildItem(($PlayListPath + "\*.wpl"))
 	ForEach ($File In $Files)
 	{
-		If ($Relative) { CreateCleanPlayList -FilePath $File.FullName -RelativePaths }
-		Else { CreateCleanPlayList -FilePath $File.FullName }
+		Write-Host $File.FullName.Replace(".wpl",".clean")
+		If ($Relative) 
+		{ 
+			$FilePath = CreateCleanPlayList -FilePath $File.FullName -RelativePaths 
+		}
+		Else 
+		{ 
+			$FilePath = CreateCleanPlayList -FilePath $File.FullName 
+		}
 
-		$FilePath = $File.FullName + ".clean"
-		If (Test-Path $FilePath ) { Write-Host $FilePath }
-		Else { Write-Host ("File not found:" + $FilePath) -ForegroundColor Red }
+		If (!(Test-Path $FilePath )) { Write-Host ("File not found:" + $FilePath) -ForegroundColor Red }
 	}
-
-	CD $startDir
 
 	If ($PrintStatus) { Write-Host; Write-Host ("CreateCleanPlayListFiles Complete!") -ForegroundColor Green; Write-Host }
 }
@@ -124,20 +160,11 @@ Function CreateCleanPlayList()
 		[Switch] $RelativePaths
 	)
 
-	#Cls
-
-	#$Script:FilePath = "D:\Music\Playlists\Favorite Rock.wpl"
-	#$NewFileParent = Split-Path $FilePath -Parent
-	#$FileLeaf = Split-Path $FilePath -Leaf
-	#$FileName = $FileLeaf.Split(".")
-	#$NewFileLeaf = ($FileName[0] + "_New." + $FileName[1])
-	#$Script:NewFilePath = Join-Path $NewFileParent -ChildPath $NewFileLeaf
-
 	If ($PrintStatus) { Write-Host; Write-Host "Creating Clean Playlist." -ForegroundColor Green; Write-Host }
 
 	If ($FilePath)
 	{
-		RemovePlayListInfo $FilePath (CreateCleanFile $FilePath)
+		$CleanFilePath = RemovePlayListInfo $FilePath ($FilePath.Replace(".wpl", ".clean"))
 	}
 	Else
 	{
@@ -147,6 +174,94 @@ Function CreateCleanPlayList()
 	If ($PrintStatus) { Write-Host; Write-Host ("CreateCleanPlayList Complete!") -ForegroundColor Green; Write-Host }
 
 	If ($CaughtException) { Write-Host }
+
+	Return $CleanFilePath
+}
+
+Function CreatePowerDVDPlayListFiles()
+{
+	Param (
+		[Switch] $PrintStatus,
+		[Switch] $Relative
+	)
+
+	[String] $FilePath = [String]::Empty
+
+	If ($PrintStatus) { Write-Host; Write-Host "Creating PowerDVD Playlists." -ForegroundColor Green; Write-Host }
+
+	$PLSFiles = Get-ChildItem(($PlayListPath + "\*.pls"))
+	If($PLSFiles.Length -gt 0)
+	{
+		RemoveFiles ($PLSFiles)
+	}
+
+	$Files = Get-ChildItem(($PlayListPath + "\*.clean"))
+	ForEach ($File In $Files)
+	{
+		Write-Host $File.FullName.Replace(".clean",".pls")
+		If ($Relative) 
+		{ 
+			$FilePath = (CreatePowerDVDPlayList -FilePath $File.FullName -RelativePaths )
+		}
+		Else 
+		{ 
+			$FilePath = (CreatePowerDVDPlayList -FilePath $File.FullName )
+		}
+
+		If (!(Test-Path $FilePath)) { Write-Host ("File not found:" + $FilePath) -ForegroundColor Red }
+	}
+
+	If ($PrintStatus) { Write-Host; Write-Host ("CreatePowerDVDPlayListFiles Complete!") -ForegroundColor Green; Write-Host }
+
+}
+
+Function CreatePowerDVDPlayList()
+{
+	Param (
+		[String] $FilePath, 
+		[Switch] $PrintStatus,
+		[Switch] $RelativePaths
+	)
+
+	If ($PrintStatus) { Write-Host; Write-Host "Creating PowerDVD Playlist." -ForegroundColor Green; Write-Host }
+
+	[Long] $LineCount = 0
+
+	$PLSFilePath = $FilePath.Replace(".clean", ".pls")
+
+	$FileContent = Get-Content $FilePath
+	ForEach($Line In $FileContent)
+	{
+		$NewLine = $Line
+		$WriteToFile = $false
+
+		If ($NewLine.Contains("<?wpl version=""1.0""?>"))
+		{
+			$NewLine = $NewLine.Replace("<?wpl version=""1.0""?>", "[playlist]")
+			$NewLine = $NewLine.Replace("  ", "")
+			$WriteToFile = $true
+		}
+		If ($NewLine.Contains("<media src=""") -or $NewLine.Contains(""" />"))
+		{
+			$NewLine = $NewLine.Replace("<media src=""", "")
+			$NewLine = $NewLine.Replace(""" />", "")
+			$NewLine = $NewLine.Replace("  ", "")
+			$WriteToFile = $true
+			$LineCount+=1
+		}
+		
+		If ($WriteToFile) { Write-ToFile $PLSFilePath $NewLine }
+
+		Write-Host "." -NoNewline
+	}
+
+	Write-Host; Write-Host "$LineCount Tracks."; Write-Host
+
+	If ($PrintStatus) { Write-Host; Write-Host ("CreatePowerDVDPlayList Complete!") -ForegroundColor Green; Write-Host }
+
+	If ($CaughtException) { Write-Host }
+
+	Return $PLSFilePath
 }
 
 # Clean the file
@@ -154,8 +269,15 @@ Function RemovePlayListInfo ([String] $FilePath, [String] $CleanFilePath)
 {
 	If ($PrintStatus) { Write-Host; Write-Host "Removing Playlists Info." -ForegroundColor Green; Write-Host }
 
-	$LiteralMediaSrc = [String]::Format("<media src=`"{0}\", ($MusicPath))
-	$RelativeMediaSrc = "<media src=`"..\"
+	[Long] $LineCount = 0
+
+	[String] $LiteralMediaSrc = [String]::Format("<media src=`"{0}\", ($MusicPath))
+	[String] $RelativeMediaSrc = "<media src=`"..\"
+
+	If (Test-Path $CleanFilePath) 
+	{
+		New-Item -Type File -Path $CleanFilePath -Force; Write-Host 
+	}
 
 	$FileContent = Get-Content $FilePath
 	ForEach($Line In $FileContent)
@@ -212,6 +334,7 @@ Function RemovePlayListInfo ([String] $FilePath, [String] $CleanFilePath)
 			{
 				$StringStart = $NewLine.IndexOf("<media src=")
 				$NewLine = ("      " + $NewLine.SubString($StringStart))
+				$LineCount+=1
 			}
 
 			If ($RelativePaths -and $NewLine.Contains($LiteralMediaSrc))
@@ -245,10 +368,16 @@ Function RemovePlayListInfo ([String] $FilePath, [String] $CleanFilePath)
 			}
 
 			Write-ToFile $CleanFilePath $NewLine
+
+			Write-Host "." -NoNewline
 		}
 	}
+	
+	Write-Host; Write-Host "$LineCount Tracks."; Write-Host
 
 	If ($PrintStatus) { Write-Host; Write-Host ("RemovePlayListInfo Complete!") -ForegroundColor Green; Write-Host }
+
+	Return $CleanFilePath
 }
 
 Function ReplacePlWithCleanPl()
@@ -259,16 +388,27 @@ Function ReplacePlWithCleanPl()
 
 	If ($PrintStatus) { Write-Host; Write-Host "Replacing Dirty Playlists with Clean Playlists." -ForegroundColor Green; Write-Host }
 
-	$Files = Get-ChildItem(($PlayListPath + "\*.*pl"))
+	RemoveFiles (Get-ChildItem(($PlayListPath + "\*.wpl")))
+	RemoveFiles (Get-ChildItem(($PlayListPath + "\*.zpl")))
+	RemoveFiles (Get-ChildItem(($PlayListPath + "\*.pls")))
+
+	$Files = Get-ChildItem(($PlayListPath + "\*.clean"))
 	ForEach ($File In $Files)
 	{
-		$CleanPL = ($File.FullName + ".clean")
-		IF (Test-Path $CleanPL)
-		{
-			Move-Item -Path $CleanPL -Destination $File.FullName -Force
-			Write-Host $File.FullName
-		}
+		$CleanWPL = $File.FullName.Replace(".clean",".wpl")
+		Copy-Item -Path $File -Destination $CleanWPL -Force
+		Write-Host $CleanWPL
+
+		$FileContent = Get-Content $File
+		$FileContent = $FileContent.Replace("<?wpl version=""1.0""?>", "<?zpl version=""2.0""?>")
+		$CleanZPL = $File.FullName.Replace(".clean",".zpl")
+		Set-Content -Path $CleanZPL -Value $FileContent -Force
+		Write-Host $CleanZPL
 	}
+	Write-Host
+
+	CreatePowerDVDPlayListFiles -PrintStatus
+	RemoveBakClean -Bak -Clean -PrintStatus
 
 	If ($PrintStatus) { Write-Host; Write-Host ("ReplacePlWithCleanPl Complete!") -ForegroundColor Green; Write-Host }
 }
@@ -281,23 +421,24 @@ Function RemoveBakClean()
 		[Switch] $Clean
 	)
 
-	$WPLFiles = ($PlayListPath + "\*.wpl")
-	$ZPLFiles = ($PlayListPath + "\*.zpl")
-
 	If  ($Bak)
 	{
-		If ($PrintStatus) { Write-Host; Write-Host "Removing .bak files." -ForegroundColor Green; Write-Host }
-
-		RemoveFiles (Get-ChildItem(($WPLFiles + ".bak")))
-		RemoveFiles (Get-ChildItem(($ZPLFiles + ".bak")))
+		$BakFiles = Get-ChildItem(($PlayListPath + "\*.bak"))
+		If ($BakFiles.Length -gt 0)
+		{
+			If ($PrintStatus) { Write-Host; Write-Host "Removing .bak files." -ForegroundColor Green; Write-Host }
+			RemoveFiles -Files $BakFiles
+		}
 	}
 
 	If  ($Clean)
 	{
-		If ($PrintStatus) { Write-Host; Write-Host "Removing .clean files." -ForegroundColor Green; Write-Host }
-
-		RemoveFiles (Get-ChildItem(($WPLFiles + ".clean")))
-		RemoveFiles (Get-ChildItem(($ZPLFiles + ".clean")))
+		$CleanFiles = Get-ChildItem(($PlayListPath + "\*.clean"))
+		If ($CleanFiles.Length -gt 0)
+		{
+			If ($PrintStatus) { Write-Host; Write-Host "Removing .clean files." -ForegroundColor Green; Write-Host }
+			RemoveFiles -Files $CleanFiles
+		}
 	}
 
 	If ($PrintStatus) { Write-Host; Write-Host ("RemoveBakClean Complete!") -ForegroundColor Green; Write-Host }
@@ -432,11 +573,11 @@ Function CopyWplToZpl()
 
 	#$PlayListScripts = $env:USERPROFILE + "\OneDrive\Scripts\PowerShell\PlaylistScripts"
 
-	$Global:MusicDrive = "M:"
-	$Global:MusicPath = $MusicDrive + "\Music"
-	$Global:PlayListPath = $MusicPath + ("\Playlists")
+	#$Global:MusicDrive = "M:"
+	#$Global:MusicPath = $MusicDrive + "\Music"
+	#$Global:PlayListPath = $MusicPath + ("\Playlists")
 
-	cd $PlayListScripts
+	#cd $PlayListScripts
 
 	$WplFiles = Get-ChildItem(($PlayListPath + "\*.wpl"))
 
@@ -469,11 +610,11 @@ Function CopyZplToWpl()
 
 	#$PlayListScripts = $env:USERPROFILE + "\OneDrive\Scripts\PowerShell\PlaylistScripts"
 
-	$Global:MusicDrive = "M:"
-	$Global:MusicPath = $MusicDrive + "\Music"
-	$Global:PlayListPath = $MusicPath + ("\Playlists")
+	#$Global:MusicDrive = "M:"
+	#$Global:MusicPath = $MusicDrive + "\Music"
+	#$Global:PlayListPath = $MusicPath + ("\Playlists")
 
-	cd $PlayListScripts
+	#cd $PlayListScripts
 
 	$ZplFiles = Get-ChildItem(($PlayListPath + "\*.zpl"))
 

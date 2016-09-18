@@ -22,33 +22,62 @@
 # Copy Files To Destination
 Function CopyFilesToDestination ($Files, $DestinationPath)
 {
+	[Long] $FileCount = 0
+
+	If (!(Test-Path $DestinationPath))
+	{
+		New-Item -Type Directory -Path $DestinationPath -Force; Write-Host 
+	}
+	
 	ForEach ($File In $Files)
 	{
 		Copy-Item -Path $File.FullName -Destination $DestinationPath -Force
 		$FilePath = Join-Path -Path $DestinationPath -ChildPath $File.Name
-		If (Test-Path $FilePath ) { Write-Host $FilePath }
-		Else { Write-Host ("File not found:" + $FilePath) -ForegroundColor Red }
+		If (Test-Path $FilePath ) 
+		{
+			Write-Host $FilePath
+			$FileCount+=1 
+		}
+		Else 
+		{
+			Write-Host ("File not found:" + $FilePath) -ForegroundColor Red 
+		}
 	}
+	Write-Host; Write-Host "$FileCount files copied."; Write-Host
 }
 
 # Remove a list of files
 Function RemoveFiles ($Files)
 {
+	[Long] $FileCount = 0
+
+	Write-Host ("Removing Old", $Files[1].Extension, "Files.")
 	ForEach ($File In $Files)
 	{
 		Remove-Item -Path $File -Force
 		Write-Host "." -NoNewline
+		$FileCount+=1 
 	}
+	Write-Host; Write-Host "$FileCount files removed."; Write-Host
 }
 
 # Write string out to file
 Function Write-ToFile ([String] $FilePath, [String] $String)
 {
-	If (!(Test-Path $FilePath)) { New-Item -Type File -Path $FilePath -Force; Write-Host } 
 
 	try
 	{
-		Out-File -FilePath $FilePath -InputObject $String -Append -Force
+		If (!(Test-Path $FilePath)) 
+		{ 
+			#New-Item -Type File -Path $FilePath -Force; Write-Host 
+			#Out-File -FilePath $FilePath -InputObject $String -Force
+			Set-Content -Path $FilePath -Value $String -Force
+		}
+		else
+		{
+			#Out-File -FilePath $FilePath -InputObject $String -Append -Force
+			Add-Content -Path $FilePath -Value $String -Force
+		}
 	}
 	catch [System.IO.IOException]
 	{

@@ -23,8 +23,8 @@
 # Load Modules #
 ################
 $ModulePath = (Split-Path $PSCommandPath -Parent)
-Import-Module $ModulePath\CommonMethods.psm1 #-Force -Global -DisableNameChecking
-Import-Module $ModulePath\PlaylistMethods.psm1 #-Force -Global -DisableNameChecking
+Import-Module $ModulePath\CommonMethods.psm1 -Force #-Global -DisableNameChecking
+Import-Module $ModulePath\PlaylistMethods.psm1 -Force #-Global -DisableNameChecking
 
 
 ###################
@@ -39,7 +39,6 @@ $Global:MusicPath = $MusicDrive + "\Music"
 $Global:PlayListPath = $MusicPath + ("\Playlists")
 
 $RootPath = ($env:USERPROFILE + "\OneDrive")
-
 $Documents = ($RootPath + "\Documents")
 
 Write-Host; Write-Host "Updating Playlists." -ForegroundColor Green; Write-Host
@@ -49,7 +48,6 @@ CopyPlaylistsToTemp -TempPlaylistPath ($Documents + "\TempPlaylists") -PrintStat
 #SetMusicFolderInFiles -PrintStatus
 CreateCleanPlayListFiles -PrintStatus -Relative
 ReplacePlWithCleanPl -PrintStatus
-RemoveBakClean -Bak -PrintStatus -Clean
 CopyPlaylistsToMaster -MasterPlayListPath ($Documents + "\MasterPlaylists") -PrintStatus
 
 Write-Host; Write-Host ($ScriptPath["Name"] + " Complete!") -ForegroundColor Green; Write-Host
