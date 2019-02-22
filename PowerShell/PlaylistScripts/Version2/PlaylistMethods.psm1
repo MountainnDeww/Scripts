@@ -395,10 +395,12 @@ Function ReplacePlWithCleanPl()
 	$Files = Get-ChildItem(($PlayListPath + "\*.clean"))
 	ForEach ($File In $Files)
 	{
+		# Create WPL
 		$CleanWPL = $File.FullName.Replace(".clean",".wpl")
 		Copy-Item -Path $File -Destination $CleanWPL -Force
 		Write-Host $CleanWPL
 
+		# Create ZPL
 		$FileContent = Get-Content $File
 		$FileContent = $FileContent.Replace("<?wpl version=""1.0""?>", "<?zpl version=""2.0""?>")
 		$CleanZPL = $File.FullName.Replace(".clean",".zpl")
@@ -407,7 +409,10 @@ Function ReplacePlWithCleanPl()
 	}
 	Write-Host
 
+	# Create PLS
 	CreatePowerDVDPlayListFiles -PrintStatus
+
+	# Cleanup
 	RemoveBakClean -Bak -Clean -PrintStatus
 
 	If ($PrintStatus) { Write-Host; Write-Host ("ReplacePlWithCleanPl Complete!") -ForegroundColor Green; Write-Host }
@@ -634,6 +639,50 @@ Function CopyZplToWpl()
 	}
 
 	If ($PrintStatus) { Write-Host; Write-Host ("CopyZplToWpl Complete!") -ForegroundColor Green; Write-Host }
+}
+
+Function CopyWplToPls()
+{
+	Param (
+		[String] $PlayListScripts,
+		[Switch] $PrintStatus
+	)
+
+	$WplFiles = Get-ChildItem(($PlayListPath + "\*.wpl"))
+
+	If ($PrintStatus) { Write-Host; Write-Host ("Copying Wpl To Pls.") -ForegroundColor Green; Write-Host }
+	
+	ForEach ($File In $WplFiles)
+	{
+		$DestinationPath = (Split-Path $File -Parent)
+		$SourceFile = (Split-Path $File -Leaf)
+		$SourceFileName = $SourceFile.Split(".")[0]
+	
+		$DestinationFile = ($DestinationPath + "\" + $SourceFileName + ".pls")
+	
+		CreatePLSFile $File $DestinationFile
+	}
+	
+	If ($PrintStatus) { Write-Host; Write-Host ($ScriptPath["Name"] + " Complete!") -ForegroundColor Green; Write-Host }
+	
+}
+
+# Create PLS file
+Function CreatePLSFile ([String] $SourceFilePath, [String] $DestinationFilePath)
+{
+    $FileContent = Get-Content $SourceFilePath
+    ForEach($Line In $FileContent)
+    {
+        If ($Line -eq ("<?wpl version=""1.0""?>"))
+        {
+            Write-ToFile $DestinationFilePath ("[playlist]")
+        }
+
+        If ($Line.Contains("<media src="))
+        {
+            Write-ToFile $DestinationFilePath $Line.Replace("<media src=", "").Replace("/>", "").Replace("""", "").Replace("  ", " ").Trim()
+        }
+    }
 }
 
 Function RestoreBakFiles()
