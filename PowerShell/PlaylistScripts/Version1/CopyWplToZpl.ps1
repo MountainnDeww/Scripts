@@ -15,6 +15,8 @@ cd $PlayListScripts
 
 $WplFiles = Get-ChildItem(($PlayListPath + "\*.wpl"))
 
+If ($PrintStatus) { Write-Host; Write-Host "Creating ZPL Files." -ForegroundColor Green; Write-Host }
+
 ForEach ($File In $WplFiles)
 {
     $DestinationPath = (Split-Path $File -Parent)

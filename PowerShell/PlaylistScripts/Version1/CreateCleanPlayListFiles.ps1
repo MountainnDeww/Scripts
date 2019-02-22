@@ -1,4 +1,5 @@
 ﻿Param (
+	[Switch] $WPL,
 	[Switch] $PrintStatus,
 	[Switch] $Relative
 )
@@ -10,9 +11,31 @@ $workingDir = $ScriptPath.Path
 
 CD $workingDir
 
+Function RemoveFiles ($Files)
+{
+    ForEach ($File In $Files)
+    {
+        Remove-Item -Path $File -Force
+        Write-Host "." -NoNewline
+    }
+}
+
+If ($WPL) 
+{ 
+    If ($PrintStatus) { Write-Host; Write-Host ("Removing pls and zpl files.") -ForegroundColor Green; Write-Host }
+    RemoveFiles (Get-ChildItem(($PlayListPath + "\*.pls")))
+    RemoveFiles (Get-ChildItem(($PlayListPath + "\*.zpl")))
+    Write-Host
+
+    $Files = Get-ChildItem(($PlayListPath + "\*.wpl")) 
+}
+Else 
+{
+    $Files = Get-ChildItem(($PlayListPath + "\*.*pl"))
+}
+
 If ($PrintStatus) { Write-Host; Write-Host "Creating Clean Playlists." -ForegroundColor Green; Write-Host }
 
-$Files = Get-ChildItem(($PlayListPath + "\*.*pl"))
 ForEach ($File In $Files)
 {
 	If ($Relative) { & .\CreateCleanPlayList.ps1 -FilePath $File.FullName -RelativePaths }

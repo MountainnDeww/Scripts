@@ -14,9 +14,11 @@ Write-Host; Write-Host "Updating Playlists." -ForegroundColor Green; Write-Host
 & .\CopyPlaylistsToTemp.ps1 -PrintStatus
 #& .\CopyMastersToPlaylists.ps1 -PrintStatus
 #& .\SetMusicFolderInFiles.ps1 -PrintStatus
-& .\CreateCleanPlayListFiles.ps1 -PrintStatus -Relative
+& .\CreateCleanPlayListFiles.ps1 -WPL -PrintStatus -Relative
 & .\ReplacePlWithCleanPl.ps1 -PrintStatus
 & .\RemoveBakClean.ps1 -Bak -PrintStatus -Clean
+& .\CopyWplToZpl.ps1 -PrintStatus
+& .\CopyWplToPls.ps1 -PrintStatus
 & .\CopyPlaylistsToMaster.ps1 -PrintStatus
 
 Write-Host; Write-Host ($ScriptPath["Name"] + " Complete!") -ForegroundColor Green; Write-Host
