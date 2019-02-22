@@ -512,7 +512,7 @@ Function SetMusicFolder()
 	{
 		$BackupFilePath = BackupFile $FilePath
 		ReCreateEmptyFile $FilePath
-		SetMusicFolder $BackupFilePath $FilePath
+		SetMusicFolderPath $BackupFilePath $FilePath
 	}
 	Else
 	{

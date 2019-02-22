@@ -104,7 +104,7 @@ Function ReCreateEmptyFile ([String] $FilePath)
 }
 
 # Clean the file
-Function SetMusicFolder ([String] $BackupFilePath, [String] $FilePath)
+Function SetMusicFolderPath ([String] $BackupFilePath, [String] $FilePath)
 {
 	$FileContent = Get-Content $BackupFilePath
 	ForEach($Line In $FileContent)
