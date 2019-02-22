@@ -83,7 +83,7 @@ Function Write-ToFile ([String] $FilePath, [String] $String)
 	{
 		$Script:CaughtException = $True
 		Write-Host "." -NoNewline
-		Sleep 2
+		Start-Sleep 2
 		Write-ToFile $FilePath $String
 	}
 }
