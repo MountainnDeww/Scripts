@@ -452,9 +452,11 @@ Function RemoveBakClean()
 Function SetMusicFolderInFiles()
 {
 	Param (
-		[String] $MusicPath,
-		[String] $PlayListPath,
-		[Switch] $PrintStatus
+		#[String] $MusicPath,
+		#[String] $PlayListPath,
+		[String] $OldMusicPath,
+		[Switch] $PrintStatus,
+		[Switch] $Relative
 	)
 
 	If ($PrintStatus) { Write-Host; Write-Host "Setting music folder in files." -ForegroundColor Green; Write-Host }
@@ -466,14 +468,28 @@ Function SetMusicFolderInFiles()
 	ForEach ($File In $WPLFiles)
 	{
 		Write-Host $File.FullName
-		SetMusicFolder -FilePath $File.FullName -MusicPath $MusicPath
+        If ($Relative)
+    	{
+		    SetMusicFolder -FilePath $File.FullName -MusicPath $MusicPath -OldMusicPath $OldMusicPath -Relative
+        }
+        Else
+        {
+		    SetMusicFolder -FilePath $File.FullName -MusicPath $MusicPath -OldMusicPath $OldMusicPath 
+        }
 	}
 
 	$ZPLFiles = Get-ChildItem ($PlayListPath + "\*.zpl")
 	ForEach ($File In $ZPLFiles)
 	{
 		Write-Host $File.FullName
-		SetMusicFolder -FilePath $File.FullName -MusicPath $MusicPath
+        If ($Relative)
+    	{
+    		SetMusicFolder -FilePath $File.FullName -MusicPath $MusicPath -OldMusicPath $OldMusicPath -Relative
+        }
+        Else
+        {
+    		SetMusicFolder -FilePath $File.FullName -MusicPath $MusicPath -OldMusicPath $OldMusicPath 
+        }
 	}
 
 	If ($PrintStatus) { Write-Host; Write-Host ("SetMusicFolderInFiles Complete!") -ForegroundColor Green; Write-Host }
@@ -483,7 +499,8 @@ Function SetMusicFolder()
 {
 	Param (
 		[String] $FilePath, 
-		[String] $MusicPath,
+		#[String] $MusicPath,
+		[String] $OldMusicPath,
 		[Switch] $PrintStatus,
 		[Switch] $Relative
 	)
@@ -498,15 +515,19 @@ Function SetMusicFolder()
 
 	If ($Relative)
 	{
-		$Script:SearchPath = $LiteralPath
-		$Script:ReplacePath = $RelativePath
+		$Global:SearchPath = $LiteralPath
+		$Global:ReplacePath = $RelativePath
 	}
 	Else
 	{
-		$Script:SearchPath = $RelativePath
-		$Script:ReplacePath = $LiteralPath
+		$Global:SearchPath = $RelativePath
+		$Global:ReplacePath = $LiteralPath
 	}
 
+    If ($OldMusicPath.Length -gt 0)
+    {
+		$Global:SearchPath = [String]::Format("<media src=`"{0}\", ($OldMusicPath))
+    }
 
 	If ($FilePath)
 	{

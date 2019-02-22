@@ -45,7 +45,8 @@ Write-Host; Write-Host "Updating Playlists." -ForegroundColor Green; Write-Host
 
 CopyPlaylistsToTemp -TempPlaylistPath ($Documents + "\TempPlaylists") -PrintStatus
 #CopyMastersToPlaylists -PrintStatus
-#SetMusicFolderInFiles -PrintStatus
+#SetMusicFolderInFiles -Relative -PrintStatus
+#SetMusicFolderInFiles -OldMusicPath "F:\Music" -Relative -PrintStatus
 CreateCleanPlayListFiles -PrintStatus -Relative
 ReplacePlWithCleanPl -PrintStatus
 CopyPlaylistsToMaster -MasterPlayListPath ($Documents + "\MasterPlaylists") -PrintStatus

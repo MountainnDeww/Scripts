@@ -109,7 +109,7 @@ Function SetMusicFolderPath ([String] $BackupFilePath, [String] $FilePath)
 	$FileContent = Get-Content $BackupFilePath
 	ForEach($Line In $FileContent)
 	{
-		If ($Line.Contains($SearchPath))
+		If ($Line.Contains("media") -and $Line.Contains($SearchPath))
 		{
 			Write-ToFile $FilePath $Line.Replace($SearchPath, $ReplacePath)
 		}
