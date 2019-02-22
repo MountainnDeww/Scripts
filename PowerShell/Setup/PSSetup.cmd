@@ -6,7 +6,7 @@
 :: @PowerShell.exe Get-ExecutionPolicy
 
 :: Set Powershell Execution Policy to RemoteSigned in order to have access to run scripts
-@PowerShell.exe Set-ExecutionPolicy RemoteSigned -Force
+@PowerShell.exe Set-ExecutionPolicy RemoteSigned -Force -Scope CurrentUser
 
 IF /I "%1"=="-Clean" (
     @PowerShell.exe -ExecutionPolicy RemoteSigned -File %~dpn0.ps1 -Clean

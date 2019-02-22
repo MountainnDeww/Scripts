@@ -2,7 +2,7 @@
 {
 	ForEach ($File In $Files)
 	{
-		Delete-Item "$SystemPS\$File"
+		If ( $IsAdmin ) { Delete-Item "$SystemPS\$File" }
 		Delete-Item "$UserPS\$File"
 	}
 }
@@ -48,11 +48,14 @@ Function Remove-EnvironmentVariable ([String[]] $VarArray)
 
 		If (!(IsDoNotDelete($Item)))
 		{
-			If ([Environment]::GetEnvironmentVariable($Item, [EnvironmentVariableTarget]::Machine))
+			If ( $IsAdmin )
 			{
-				[Environment]::SetEnvironmentVariable($Item, $null, [EnvironmentVariableTarget]::Machine)
+				If ([Environment]::GetEnvironmentVariable($Item, [EnvironmentVariableTarget]::Machine))
+				{
+					[Environment]::SetEnvironmentVariable($Item, $null, [EnvironmentVariableTarget]::Machine)
+				}
 			}
-		
+
 			If ([Environment]::GetEnvironmentVariable($Item, [EnvironmentVariableTarget]::User))
 			{
 				[Environment]::SetEnvironmentVariable($Item, $null, [EnvironmentVariableTarget]::User)
@@ -67,7 +70,7 @@ Function Remove-EnvironmentVariable ([String[]] $VarArray)
 			#	}
 			#}
 		}
-   }
+	}
 }
 
 Function Remove-EnvironmentVariables 
@@ -187,6 +190,7 @@ Function Remove-EnvironmentVariables
 	, "SystemRoot"
 	, "TEMP"
 	, "TMP"
+	, "USERDNSDOMAIN"
 	, "USERDOMAIN"
 	, "USERDOMAIN_ROAMINGPROFILE"
 	, "USERNAME"
@@ -196,11 +200,13 @@ Function Remove-EnvironmentVariables
 	, "windir"
 )
 
-Remove-Module -Name Location -Force -ErrorAction SilentlyContinue
+$IsAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
+
 Remove-Module -Name URL -Force -ErrorAction SilentlyContinue
-Remove-Module -Name Environment -Force -ErrorAction SilentlyContinue
 Remove-Module -Name Shares -Force -ErrorAction SilentlyContinue
 Remove-Module -Name Normh -Force -ErrorAction SilentlyContinue
+Remove-Module -Name Location -Force -ErrorAction SilentlyContinue
+Remove-Module -Name Environment -Force -ErrorAction SilentlyContinue
 Remove-Module -Name Automation -Force -ErrorAction SilentlyContinue
 Remove-Module -Name Common -Force -ErrorAction SilentlyContinue
 

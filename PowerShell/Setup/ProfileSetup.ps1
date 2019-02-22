@@ -46,9 +46,9 @@ Param (
 # Deletes all existing profiles
 Function CleanProfile ([String[]] $ProfileArray = $Script:ProfileArray)
 {
-    If (Test-Path $Profile) 
+    If (Test-Path $Profile.AllUsersAllHosts) 
     {
-        Write-Host; Write-Host "Removing Profiles ..."
+        Write-Host; Write-Host "Removing Profile(s) ..."
         foreach ($Item In $ProfileArray)
         {
             If ((Test-Path $Item))
@@ -88,24 +88,39 @@ Function OpenProfile([String[]] $ProfileArray = $Script:ProfileArray)
 # Create a new profile using the following Aliases, Functions, and Variables
 Function CreateNewProfile([String[]] $ProfileArray = $Script:ProfileArray)
 {
-    Write-Host; Write-Host "Creating New Profiles ..."
+    Write-Host; Write-Host "Creating New Profile(s) ..."
 
-    If (!(Test-Path $Profile)) { New-Item -Type File -Path $Profile -Force | Out-Null }
+    If (!(Test-Path $Profile.AllUsersAllHosts)) { New-Item -Type File -Path $Profile.AllUsersAllHosts -Force | Out-Null }
+
+$AUAH = $Profile.AllUsersAllHosts
 
 $ProfileText = @"
+# This Profile: $AUAH
+
 # `$Profile.AllUsersAllHosts
-# $Env:windir\system32\WindowsPowerShell\v1.0\profile.ps1
+#  x64 - $Env:windir\system32\WindowsPowerShell\v1.0\profile.ps1
+#  x86 - $Env:windir\sysWOW64\WindowsPowerShell\v1.0\profile.ps1
 
 # `$Profile.AllUsersCurrentHost
-# $Env:windir\system32\WindowsPowerShell\v1.0\Microsoft.PowerShell_profile.ps1
-# $Env:windir\system32\WindowsPowerShell\v1.0\Microsoft.PowerShellISE_profile.ps1
+# x64 Console - $Env:windir\system32\WindowsPowerShell\v1.0\Microsoft.PowerShell_profile.ps1
+# x86 Console - $Env:windir\sysWOW64\WindowsPowerShell\v1.0\Microsoft.PowerShell_profile.ps1
+# x64 ISE     - $Env:windir\system32\WindowsPowerShell\v1.0\Microsoft.PowerShellISE_profile.ps1
+# x86 ISE     - $Env:windir\sysWOW64\WindowsPowerShell\v1.0\Microsoft.PowerShellISE_profile.ps1
+# x64 VSCode  - $Env:windir\system32\WindowsPowerShell\v1.0\Microsoft.VSCode_profile.ps1
 
 # `$Profile.CurrentUserAllHosts
-# $Env:UserProfile\My Documents\WindowsPowerShell\profile.ps1
+# $Env:UserProfile\Documents\WindowsPowerShell\profile.ps1
 
 # `$Profile.CurrentUserCurrentHost
-# $Env:UserProfile\My Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1
-# $Env:UserProfile\My Documents\WindowsPowerShell\Microsoft.PowerShellISE_profile.ps1
+# Console - $Env:UserProfile\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1
+# ISE     - $Env:UserProfile\Documents\WindowsPowerShell\Microsoft.PowerShellISE_profile.ps1
+# VSCode  - $Env:UserProfile\Documents\WindowsPowerShell\Microsoft.VSCode_profile.ps1
+
+#Write-Host "This Profile: $AUAH"
+
+`$Global:PSOriginalUserModules = `"$PSModules`"
+`$Global:PSSetupScripts = `"$PSSetupScripts`"
+
 
 ################
 # Set Security #
@@ -118,15 +133,24 @@ If ((Get-ExecutionPolicy -Scope CurrentUser) -ne "RemoteSigned") { Set-Execution
 # Load Modules #
 ################
 
+#Write-Host "Installing Locations Module"
 Import-Module Locations -Force -Global -DisableNameChecking
+#Write-Host "Installing Shares Module"
 Import-Module Shares -Force -Global -DisableNameChecking
+#Write-Host "Installing URLs Module"
 Import-Module URLs -Force -Global -DisableNameChecking
+#Write-Host "Installing Common Module"
 Import-Module Common -Force -Global -DisableNameChecking
+#Write-Host "Installing Environment Module"
 Import-Module Environment -Force -Global -DisableNameChecking
+#Write-Host "Installing Normh Module"
 Import-Module Normh -Force -Global -DisableNameChecking
 
+#Write-Host "Setting Load Path: PSUserModulePath"
 Set-LoadPSModulePath(`$PSUserModulePath)
+#Write-Host "Setting Load Path: PSWindowsModulePath"
 Set-LoadPSModulePath(`$PSWindowsModulePath)
+#Write-Host "Setting Load Path: PSScriptsModulePath"
 Set-LoadPSModulePath(`$PSScriptsModulePath)
 
 ##################
@@ -136,12 +160,21 @@ Set-LoadPSModulePath(`$PSScriptsModulePath)
 Export-Alias -Path `$PSDir\AliasScript.ps1 -As Script
 Export-Alias -Path `$PSDir\AliasCSV.ps1 -As CSV
 
+##################
+# Launch GitHub  #
+##################
+
+C:\Users\Norman\AppData\Local\GitHub\GitHub.appref-ms
+Write-Host "GitHub Enabled"
+
 If (`$PWD -ne `$PSScripts) { Set-Location `$PSScripts }
+
+Write-Host 
 "@
   
-    Write-ToProfile $ProfileText
+    Write-ToProfile $Profile.AllUsersAllHosts $ProfileText
     
-    Write-Host "Created $Profile"
+    Write-Host "Created" $Profile.AllUsersAllHosts
 
     ForEach ($Item In $ProfileArray)
     {
@@ -189,26 +222,46 @@ Function Copy-Modules
 # Load Modules
 Function Load-Modules
 {
-    Import-Module Locations -Force -Global -DisableNameChecking
-    Import-Module Shares -Force -Global -DisableNameChecking
-    Import-Module URLs -Force -Global -DisableNameChecking
+   ##############################
+   #.SYNOPSIS
+   #Short description
+   #
+   #.DESCRIPTION
+   #Long description
+   #
+   #.EXAMPLE
+   #An example
+   #
+   #.NOTES
+   #General notes
+   ##############################Write-Host "Loading Modules"; Write-Host
+
     Import-Module Common -Force -Global -DisableNameChecking
+    #Import-Module PSEnv -Force -Global -DisableNameChecking
+    Import-Module Locations -Force -Global -DisableNameChecking
+    #Import-Module SHEnv -Force -Global -DisableNameChecking
     Import-Module Environment -Force -Global -DisableNameChecking
     Import-Module Normh -Force -Global -DisableNameChecking
+    Import-Module Shares -Force -Global -DisableNameChecking
+    Import-Module URLs -Force -Global -DisableNameChecking
 }
 
 # Unload Modules
 Function Unload-Modules
 {
-    Remove-Module Common -Force
-    Remove-Module Environment -Force
+    #Write-Host "Unloading Modules"; Write-Host
+
+    Remove-Module URLs -Force
     Remove-Module Shares -Force
     Remove-Module Normh -Force
-    #Remove-Module Locations -Force
-    #Remove-Module URLs -Force
+    #Remove-Module SHEnv -Force
+    Remove-Module Environment -Force
+    #Remove-Module PSEnv -Force
+    Remove-Module Locations -Force
+    Remove-Module Common -Force
 }
 
-Clear-Host
+#Clear-Host
 
 # Set the machines execution policy
 If ((Get-ExecutionPolicy) -ne "RemoteSigned")
@@ -216,23 +269,21 @@ If ((Get-ExecutionPolicy) -ne "RemoteSigned")
     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
 }
 
-# Setup OneDrive PowerShell modules locations
-If (Test-Path ((Split-Path $PWD) + "\Modules"))
+# Setup PowerShell Modules Locations
+$PSModules = ((Split-Path $PSCommandPath) + "\Modules")
+If (!(Test-Path($PSModules)))
 {
-    $PSModules = ((Split-Path $PWD) + "\Modules")
+	$PSModules = ((Split-Path $PSCommandPath) + "\..\Modules")
+	If (!(Test-Path($PSModules)))
+	{
+		Write-Warning "Modules path does not exist!"
+		Exit
+	}
 }
-Else
-{
-    $PSModules = ($Env:UserProfile + "\OneDrive\Scripts\PowerShell\Modules")
-    If (!(Test-Path($PSModules)))
-    {
-        $PSModules = ($Env:UserProfile + "\SkyDrive\Scripts\PowerShell\Modules")
-        If (!(Test-Path($PSModules)))
-        {
-            Write-Warning "Local OneDrive (or SkyDrive) does not exist"
-        }
-    }
-}
+
+
+# PS Setup Location
+$Global:PSSetupScripts = (Split-Path $PSCommandPath)
 
 # Defalut PS Scripts and Modules
 $Global:PSUserHome = ($Home + "\Documents\WindowsPowerShell")
@@ -265,24 +316,43 @@ $AllUsersCurrentHost = ($Env:windir + "\system32\WindowsPowerShell\v1.0\Microsof
 $CurrentUserCurrentHostISE = ($Env:UserProfile + "\Documents\WindowsPowerShell\Microsoft.PowerShellISE_profile.ps1")
 $AllUsersCurrentHostISE = ($Env:windir + "\system32\WindowsPowerShell\v1.0\Microsoft.PowerShellISE_profile.ps1")
 
-# Create an array of all profiles
-$ProfileArray = @(
-    $Profile.AllUsersAllHosts,
-    $Profile.AllUsersCurrentHost,
-    $Profile.CurrentUserAllHosts,
-    $Profile.CurrentUserCurrentHost
-)
+# VSCode current host profiles
+$CurrentUserCurrentHostVSCode = ($Env:UserProfile + "\Documents\WindowsPowerShell\Microsoft.VSCode_profile.ps1")
+$AllUsersCurrentHostVSCode = ($Env:windir + "\system32\WindowsPowerShell\v1.0\Microsoft.VSCode_profile.ps1")
 
-If($psISE)
-{
-    # Script is running in the ISE, add the default Current User Profiles
-    $ProfileArray = $ProfileArray += ($AllUsersCurrentHost, $CurrentUserCurrentHost)
-}
-Else
-{
-    # Script is not running in the ISE, add the ISE Current User Profiles
-    $ProfileArray = $ProfileArray += ($AllUsersCurrentHostISE, $CurrentUserCurrentHostISE)
-}
+# Create an array of all profiles
+# Lets just try this one for everything until we need something specific for the other individual profiles.
+$ProfileArray = @(
+    $Profile.AllUsersAllHosts
+)
+# $ProfileArray = @(
+#     $Profile.AllUsersAllHosts,
+#     $Profile.AllUsersCurrentHost,
+#     $Profile.CurrentUserAllHosts,
+#     $Profile.CurrentUserCurrentHost
+# )
+
+# If($psISE)
+# {
+#     # Script is running in the ISE, add the default and VSCode Current User Profiles
+#     $ProfileArray = $ProfileArray += ($AllUsersCurrentHost, $CurrentUserCurrentHost)
+#     $ProfileArray = $ProfileArray += ($AllUsersCurrentHostVSCode, $CurrentUserCurrentHostVSCode)
+# }
+# ElseIf($psEditor)
+# {
+#     # Script is running in VSCode, add the default and ISE Current User Profiles
+#     $ProfileArray = $ProfileArray += ($AllUsersCurrentHost, $CurrentUserCurrentHost)
+#     $ProfileArray = $ProfileArray += ($AllUsersCurrentHostISE, $CurrentUserCurrentHostISE)
+# }
+# Else
+# {
+#     # Script is not running in the ISE or VSCode, add the ISE and VSCode Current User Profiles
+#     $ProfileArray = $ProfileArray += ($AllUsersCurrentHostISE, $CurrentUserCurrentHostISE)
+#     $ProfileArray = $ProfileArray += ($AllUsersCurrentHostVSCode, $CurrentUserCurrentHostVSCode)
+# }
+
+#Write-Host "Profiles"
+#$ProfileArray
 
 # Create or View the profiles
 If ($Reset)

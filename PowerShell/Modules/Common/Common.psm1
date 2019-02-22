@@ -34,14 +34,18 @@ Function Global:NPP { & "$NPP" $args }
 # Refresh Modules - Copy down any changed files and re-import modules
 Function Global:Refresh-Modules
 {
+	#CLS
+	
     #UpdateFiles (Get-ChildItem -Path $SkyPSScripts -Recurse) (Get-ChildItem -Path $PSScripts -Recurse)
 
-    Copy-Item -Path $SkyPSModules\* -Destination $PSUserModulePath -Recurse -Force
+    Copy-Item -Path $PSOriginalUserModules\* -Destination $PSUserModulePath -Recurse -Force
+	Write-Host "Modules Copied to $PSUserModulePath" -ForegroundColor Green
 
     $ErrorActionPreference = "Stop"
     Try
     {
-        Copy-Item -Path $SkyPSModules\* -Destination $PSWindowsModulePath -Recurse -Force
+        Copy-Item -Path $PSOriginalUserModules\* -Destination $PSWindowsModulePath -Recurse -Force
+		Write-Host "Modules Copied to $PSWindowsModulePath" -ForegroundColor Green
     }
     Catch [System.UnauthorizedAccessException]
     {
@@ -50,26 +54,44 @@ Function Global:Refresh-Modules
     }
     $ErrorActionPreference = "Continue"
 
+    Remove-Module Normh -Force
+    Remove-Module Environment -Force
+    Remove-Module Common -Force
+    Remove-Module URLs -Force
+    Remove-Module Shares -Force
+    Remove-Module Locations -Force
+
     Import-Module Locations -Force -Global -DisableNameChecking
-    Import-Module Normh -Force -Global -DisableNameChecking
     Import-Module Shares -Force -Global -DisableNameChecking
     Import-Module URLs -Force -Global -DisableNameChecking
     Import-Module Common -Force -Global -DisableNameChecking
+    Import-Module Environment -Force -Global -DisableNameChecking
+    Import-Module Normh -Force -Global -DisableNameChecking
+
+	Write-Host; Write-Host "Refresh Complete!" -ForegroundColor Green; Write-Host
 }
 
 # Write string out to profile
-Function Global:Write-ToProfile([string] $String, [switch] $BlankBefore, [switch] $BlankAfter)
+Function Global:Write-ToProfile([string] $FilePath, [string] $String, [switch] $BlankBefore, [switch] $BlankAfter)
 {
-    If (!(Test-Path $Profile)) { New-Item -Type File -Path $Profile -Force }
-    If ($BlankBefore) { Write-ToFile -File $Profile -String [String]::Empty }
-    Write-ToFile -File $Profile -String $String
-    If ($BlankAfter) { Write-ToFile -File $Profile -String [String]::Empty }
+    If (!(Test-Path $FilePath)) { New-Item -Type File -Path $FilePath -Force }
+    If ($BlankBefore) { Write-ToFile -File $FilePath -String [String]::Empty }
+    Write-ToFile -File $FilePath -String $String
+    If ($BlankAfter) { Write-ToFile -File $FilePath -String [String]::Empty }
+}
+
+# Create a new empty file
+Function Global:New-EmptyFile([String] $FilePath)
+{
+    If (!(Test-Path $FilePath)) { New-Item -Type File -Path $FilePath -Force | Out-Null }
+    else { Write-Host "$FilePath already exists."}
 }
 
 # Write string out to file
-Function Global:Write-ToFile($File, [string] $String)
+Function Global:Write-ToFile($File, [String] $String, [Switch] $ANSI)
 {
-    Out-File -FilePath $File -InputObject "$String" -Append -Force
+    If ($ANSI) { Out-File -FilePath $File -InputObject "$String" -Append -Encoding ascii -Force }
+    Else { Out-File -FilePath $File -InputObject "$String" -Append -Force }
 }
 
 # Write a global variabel to the profile
@@ -129,44 +151,46 @@ Function Global:Write-LineToProfile([String] $NewLine)
 
 Function Global:Get-ScriptInfo ($ScriptFullPath, $Debug)
 {
-    #$Global:ScriptFullPath = $PSCommandPath
-    #$Global:ScriptFullPath = $MyInvocation.MyCommand.Path
-    $ScriptPath = Split-Path $ScriptFullPath -Parent
-    #$ScriptDrive = $ScriptPath.Split("\")[0]
-    $ScriptDrive = Split-Path $ScriptFullPath -Qualifier
-    #$ScriptFile = $ScriptFullPath.Remove(0,$ScriptPath.Length+1)
-    $ScriptFile = Split-Path $ScriptFullPath -Leaf
-    $ScriptFileArray = $ScriptFile.Split(".")
-    $ScriptExt = $ScriptFileArray[$ScriptFileArray.Count-1]
-    $ScriptName = $Null
-    ForEach($Item In $ScriptFileArray)
+    If ($ScriptFullPath.Length -gt 0)
     {
-        If ($Item -ne $ScriptExt)
+        #$Global:ScriptFullPath = $PSCommandPath
+        #$Global:ScriptFullPath = $MyInvocation.MyCommand.Path
+        $ScriptPath = Split-Path $ScriptFullPath -Parent
+        #$ScriptDrive = $ScriptPath.Split("\")[0]
+        $ScriptDrive = Split-Path $ScriptFullPath -Qualifier
+        #$ScriptFile = $ScriptFullPath.Remove(0,$ScriptPath.Length+1)
+        $ScriptFile = Split-Path $ScriptFullPath -Leaf
+        $ScriptFileArray = $ScriptFile.Split(".")
+        $ScriptExt = $ScriptFileArray[$ScriptFileArray.Count-1]
+        $ScriptName = $Null
+        ForEach($Item In $ScriptFileArray)
         {
-            If ($ScriptName)
+            If ($Item -ne $ScriptExt)
             {
-                $ScriptName = $ScriptName + "." + $Item
-            }
-            Else
-            {
-                $ScriptName = $Item
+                If ($ScriptName)
+                {
+                    $ScriptName = $ScriptName + "." + $Item
+                }
+                Else
+                {
+                    $ScriptName = $Item
+                }
             }
         }
+
+        If ($Debug)
+        {
+            Write-Host "ScriptFullPath : $ScriptFullPath"
+            Write-Host "ScriptPath     : $ScriptPath"
+            Write-Host "ScriptDrive    : $ScriptDrive"
+            Write-Host "ScriptFile     : $ScriptFile"
+            Write-Host "ScriptFileArray: $ScriptFileArray"
+            Write-Host "ScriptName     : $ScriptName"
+            Write-Host "ScriptExt      : $ScriptExt"
+        }
+
+        $ScriptDictionary = @{"FullPath" = $ScriptFullPath; "Drive" = $ScriptDrive; "Path" = $ScriptPath; "File" = $ScriptFile; "Name" = $ScriptName; "Ext" = $ScriptExt}
     }
-
-    If ($Debug)
-    {
-        Write-Host "ScriptFullPath : $ScriptFullPath"
-        Write-Host "ScriptPath     : $ScriptPath"
-        Write-Host "ScriptDrive    : $ScriptDrive"
-        Write-Host "ScriptFile     : $ScriptFile"
-        Write-Host "ScriptFileArray: $ScriptFileArray"
-        Write-Host "ScriptName     : $ScriptName"
-        Write-Host "ScriptExt      : $ScriptExt"
-    }
-
-    $ScriptDictionary = @{"FullPath" = $ScriptFullPath; "Drive" = $ScriptDrive; "Path" = $ScriptPath; "File" = $ScriptFile; "Name" = $ScriptName; "Ext" = $ScriptExt}
-
     Return $ScriptDictionary
 }
 
@@ -418,7 +442,8 @@ Function Global:PS-SetX ([String] $VariableName, [String] $VariableValue, [Switc
                 # Update Machine
                 $Setx = ("setx.exe " + $Item.Name + " `"" + $NewItemValue + "`" /M")
                 Invoke-Expression $Setx
-                If($?) { Write-Host " Success: $VariableName $NewItemValue" }
+                #If($?) { Write-Host " Success: $VariableName $NewItemValue" }
+                If(!($?)) { Write-Host " Fail setx: $VariableName $NewItemValue" }
             }
             Else
             {
@@ -435,8 +460,11 @@ Function Global:PS-SetX ([String] $VariableName, [String] $VariableValue, [Switc
         # Update Machine
         $Setx = ("setx.exe " + $VariableName + " `"" + $VariableValue + "`" /M")
         Invoke-Expression $Setx
-        If($?) { Write-Host " Success: $VariableName $VariableValue" }
+        #If($?) { Write-Host " Success: $VariableName $VariableValue" }
+        If(!($?)) { Write-Host " Fail setx: $VariableName $VariableValue" }
     }
+
+    # $? checks the error condition of Invoke-Expression (success or failure)
 }
 
 Function Global:Add-ItemToPath([String] $CurrentPath, [String] $NewPath)
@@ -648,7 +676,7 @@ Function Global:Profile { notepad $Profile.CurrentUserCurrentHost }
 
 Function Global:Get-CHM { Invoke-Item $Env:windir\help\mui\0409\WindowsPowerShellHelp.chm }
 
-Function Global:Get-CmdletAlias ($cmdletname) { get-alias | Where {$_.definition -like "*$cmdletname*"} | ft Definition, Name -auto }
+Function Global:Get-CmdletAlias ($cmdletname) { Get-Alias | Where-Object {$_.definition -like "*$cmdletname*"} | Format-Table Definition, Name -auto }
 
 Function Global:Get-MoreHelp { Get-Help $args[0] -Full | more }
 
@@ -664,7 +692,7 @@ Function Global:PSISE { If ($args) { Start-Process -FilePath "C:\Windows\System3
 
 "#.Help Global:Get-WmiClass `"root\cimv2`" `"Processor`";"
 
-Function Global:Get-WmiClass { $ns = $args[0]; $class = $args[1]; Get-WmiObject -List -Namespace $ns | Where-Object { $_.name -match $class } }
+Function Global:Get-WmiClass { $ns = $args[0]; $class = $args[1]; Get-WmiObject -List -Namespace $ns | Where-Object { $_.name -Match $class } }
 
 Function Global:Get-Env { [Environment]::GetEnvironmentVariable($Variable, $Scope) }
 
@@ -674,7 +702,7 @@ Function Global:Del-Env { [Environment]::SetEnvironmentVariable($Variable, $Null
 
 Function Global:FS { findstr /spin $args }
 
-Function Global:E { start $pwd }
+Function Global:E { Start-Process -FilePath $pwd }
 Function Global:F { find /i /n $args }
 Function Global:Q { exit }
 
@@ -690,11 +718,11 @@ Function Save-AllISEFiles
             multiple PowerShellTabs, saves files in all tabs.
     #>
 
-    foreach($tab in $psISE.PowerShellTabs)
+    ForEach($tab In $psISE.PowerShellTabs)
     {
-        foreach($file in $tab.Files)
+        ForEach($file In $tab.Files)
         {
-            if(!$file.IsUntitled)
+            If(!$file.IsUntitled)
             {
                 $file.Save()
             }
@@ -718,4 +746,97 @@ If (!$SaveAsExists)
     {
         $psISE.CurrentPowerShellTab.AddOnsMenu.Submenus.Add("Save All",{Save-AllISEFiles},"Ctrl+Shift+S")
     }
+}
+
+Function New-VFA ( [String] $Name, [String] $Alias, [String] $VType, [String] $SF, [String] $ENV, [String] $Path, [String] $File, [Switch] $Clean )
+{
+#     # Create the content
+#     $NewContent = 
+# @"
+# If ((`$$Name.Length -eq 0) -or (`$$Name -ne `$wshShell.SpecialFolders.Item("$Name"))) { `$Global:$Name = `$wshShell.SpecialFolders.Item("$Name") }
+# If ((`$$Name.Length -ne 0) -and ((Get-ChildItem Function:$Name -ErrorAction Ignore) -eq `$NULL)) { Function Global:$Name { Push-Location `$$Name } }
+# If ((`$$Name.Length -ne 0) -and ((Get-ChildItem Alias:$Alias -ErrorAction Ignore) -eq `$NULL)) { Set-Alias -Name $Alias -Value $Name -Scope Global }
+# "@
+
+    # Create the Variable Type String
+    # SF = 'wshShell.SpecialFolders.Item'
+    # ENV = 'Environment Variable'
+    # Path = 'Path to item'
+
+    Switch ($VType)
+    {
+        "SF" { 
+            If ($SF) { $V = "If ((`$$Name.Length -eq 0) -or (`$$Name -ne `$wshShell.SpecialFolders.Item(`"$SF`"))) { `$Global:$Name = `$wshShell.SpecialFolders.Item(`"$SF`") }" }
+            Else { $V = "If ((`$$Name.Length -eq 0) -or (`$$Name -ne `$wshShell.SpecialFolders.Item(`"$Name`"))) { `$Global:$Name = `$wshShell.SpecialFolders.Item(`"$Name`") }" }
+        }
+
+        "ENV" { 
+            If ($ENV) { $V = "If ((`$$Name.Length -eq 0) -or (`$$Name -ne `$Env:$ENV)) { `$Global:$Name = `$Env:$ENV }" }
+            Else {$V = "If ((`$$Name.Length -eq 0) -or (`$$Name -ne `$Env:$Name)) { `$Global:$Name = `$Env:$Name }" }
+        }
+
+        "Path" { 
+            If ($Path) { $V = "If ((`$$Name.Length -eq 0) -or (`$$Name -ne `"$Path`")) { `$Global:$Name = `"$Path`" }" }
+            #Else { $V = "If ((`$$Name.Length -eq 0) -or (`$$Name -ne `"$Name`")) { `$Global:$Name = `"$Name`" }" }
+        } 
+    }
+
+    # Create the Function String
+    $F = "If ((`$$Name.Length -ne 0) -and ((Get-ChildItem Function:$Name -ErrorAction Ignore) -eq `$NULL)) { Function Global:$Name { Push-Location `$$Name } }"    
+
+    # Create the Alias String
+    If ($Alias) { $A = "If ((`$$Name.Length -ne 0) -and ((Get-ChildItem Alias:$Alias -ErrorAction Ignore) -eq `$NULL)) { Set-Alias -Name $Alias -Value $Name -Scope Global }" }
+
+    # Create the VFA (VariableFunctionAlias) Content by combining all the strings into a Here-String 
+    $NewContent = 
+@"
+$V
+$F
+$A
+"@    
+  
+    #Write-Host $NewContent
+    #Pause
+
+    # Delete the file
+    If ($Clean) { If (Test-Path $File) {Remove-Item -Path $File} }
+    #Write-Host "Cleaned: $File"
+    
+    # Create the File if it does not exist
+    If (!(Test-Path $File)) { New-Item -Type File -Path $File -Force }
+    #Write-Host "Created: $File"
+    
+    # Write the content to the file
+    Out-File -FilePath $File -InputObject "$NewContent" -Append -Force
+    #Write-Host "Appended: $File"
+    
+}
+
+Function Get-AllUserGroups
+{
+    [cmdletbinding()]
+    param()
+    $Groups = [System.Security.Principal.WindowsIdentity]::GetCurrent().Groups
+    foreach ($Group in $Groups) {
+      $GroupSID = $Group.Value
+      $GroupName = New-Object System.Security.Principal.SecurityIdentifier($GroupSID)
+      $GroupDisplayName = $GroupName.Translate([System.Security.Principal.NTAccount])
+      $GroupDisplayName
+      }
+}
+
+Function Get-Groups
+{
+    Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+    $ct = [System.DirectoryServices.AccountManagement.ContextType]::Domain
+    $user = [System.DirectoryServices.AccountManagement.Principal]::FindByIdentity($ct, $env:USERNAME)
+    $user.GetGroups() #gets all user groups (direct)
+}
+
+Function Get-AuthorizationGroups
+{
+    Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+    $ct = [System.DirectoryServices.AccountManagement.ContextType]::Domain
+    $user = [System.DirectoryServices.AccountManagement.Principal]::FindByIdentity($ct, $env:USERNAME)
+    $user.GetAuthorizationGroups() #gets all user groups including nested groups (indirect)
 }

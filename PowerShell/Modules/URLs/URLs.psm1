@@ -13,10 +13,12 @@ Function Global:MSN          { start http://www.msn.com }
 Function Global:MSDN         { start http://msdn.microsoft.com/en-US/ }
 Function Global:OFFUPDATE    { start http://office.microsoft.com/en-us/downloads/default.aspx?ofcresset=1 }
 Function Global:SECURITY     { start http://www.microsoft.com/security/default.mspx }
-Function Global:SCRIPTS      { start http://www.microsoft.com/technet/scriptcenter/default.mspx?wt.svl=leftnav }
+Function Global:SCRIPTCENTER { start http://www.microsoft.com/technet/scriptcenter/default.mspx?wt.svl=leftnav }
 Function Global:SUPPORT      { start http://support.microsoft.com/ }
 Function Global:SYSINTERNALS { start http://www.microsoft.com/technet/sysinternals/default.mspx?wt.svl=leftnav }
 Function Global:TECHNET      { start http://technet.microsoft.com/en-us/default.aspx }
+Function Global:WPSDOC       { start https://docs.microsoft.com/en-us/powershell/scripting/powershell-scripting?view=powershell-5.1 }
+Function Global:WPSOM        { start https://technet.microsoft.com/library/ee221100.aspx }
 Function Global:YAHOO        { start http://www.yahoo.com }
 
 #Microsoft
